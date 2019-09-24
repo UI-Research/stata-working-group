@@ -1,0 +1,1181 @@
+--------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  D:\Users\clou\Box Sync\Stata Trainings-Workgroup\201 - Data Cleaning materials\StataClass_3
+> 1 Jul 2019.log
+  log type:  text
+ opened on:  31 Jul 2019, 11:18:28
+
+. 
+. 
+. /*Easiest way to import a file is to use the pull down menu, it will give you the stata 
+> code for the command, otherwise you can use StatTransfer*/
+. 
+. /*Importing an excel file*/
+. import excel "Stata Class File_long.xlsx",      /// Imports the excel file
+>                         sheet("Sheet1") /// Tells stata which sheet to import
+>                         firstrow                /// Tells stata first row is variable names
+>                         case(lower)     /// Makes variable names lowercase (Stata is case sensitive)
+>                         allstring               /// Forces all to be string, some numeric won't import
+>  well
+>                         clear 
+
+.                         
+. describe
+
+Contains data
+  obs:         9,869                          
+ vars:             3                          
+ size:       414,498                          
+--------------------------------------------------------------------------------------------------------
+              storage   display    value
+variable name   type    format     label      variable label
+--------------------------------------------------------------------------------------------------------
+arrdate         str10   %10s                  arrdate
+id              str6    %9s                   id
+violdesc        str26   %26s                  violdesc
+--------------------------------------------------------------------------------------------------------
+Sorted by: 
+     Note: Dataset has changed since last saved.
+
+. list in 1/10                            /* Lists the first 10 observations*/
+
+     +----------------------------------------------+
+     |    arrdate   id                     violdesc |
+     |----------------------------------------------|
+  1. |   4/3/2013    1         theft of rental prop |
+  2. |  8/30/2013    1   alcohol -consume in public |
+  3. |  1/24/2014    1   alcohol -consume in public |
+  4. |  1/30/2013    1   alcohol -consume in public |
+  5. |  7/22/2014    1   alcohol -consume in public |
+     |----------------------------------------------|
+  6. |  7/22/2014    1         theft of rental prop |
+  7. |   5/7/2013    1   alcohol -consume in public |
+  8. |  7/23/2014    1           theft by receiving |
+  9. |   2/7/2012   10   alcohol -consume in public |
+ 10. |  7/24/2013   10     Consume liquor in public |
+     +----------------------------------------------+
+
+. 
+. *DUPLICATES
+. /*Checking for duplicates, this should includ one observation per person per arrest date*/
+. duplicates report id                    /*more than one arrest for most of these individuals*/
+
+Duplicates in terms of id
+
+--------------------------------------
+   copies | observations       surplus
+----------+---------------------------
+        1 |         4463             0
+        2 |         1960           980
+        3 |          972           648
+        4 |          464           348
+        5 |          390           312
+        6 |          240           200
+        7 |          161           138
+        8 |          144           126
+        9 |          108            96
+       10 |           90            81
+       11 |           55            50
+       12 |          108            99
+       13 |           65            60
+       14 |           14            13
+       15 |           75            70
+       16 |           48            45
+       17 |           17            16
+       18 |           36            34
+       19 |           38            36
+       20 |           60            57
+       22 |           66            63
+       24 |           48            46
+       26 |           26            25
+       28 |           28            27
+       29 |           29            28
+       30 |           30            29
+       31 |           31            30
+       32 |           64            62
+       39 |           39            38
+--------------------------------------
+
+. duplicates report id arrdate    /*reports number of duplicates on id arrdate*/
+
+Duplicates in terms of id arrdate
+
+--------------------------------------
+   copies | observations       surplus
+----------+---------------------------
+        1 |         9853             0
+        2 |           16             8
+--------------------------------------
+
+. duplicates tag id arrdate, gen(t_dup) /*generates a variable called t_dup to identify 
+>                                                                         duplicates*/
+
+Duplicates in terms of id arrdate
+
+. list if t_dup!=0 
+
+      +----------------------------------------------------------+
+      |    arrdate       id                     violdesc   t_dup |
+      |----------------------------------------------------------|
+   5. |  7/22/2014        1   alcohol -consume in public       1 |
+   6. |  7/22/2014        1         theft of rental prop       1 |
+ 122. |  8/24/2013     1001         theft of rental prop       1 |
+ 123. |  8/24/2013     1001   alcohol -consume in public       1 |
+ 207. | 12/27/2012   100178   alcohol -consume in public       1 |
+      |----------------------------------------------------------|
+ 208. | 12/27/2012   100178                  petty theft       1 |
+ 306. | 12/28/2012   100295                  petty theft       1 |
+ 307. | 12/28/2012   100295     Consume liquor in public       1 |
+ 406. |   6/3/2013     1004   alcohol -consume in public       1 |
+ 407. |   6/3/2013     1004                        Theft       1 |
+      |----------------------------------------------------------|
+ 445. |  2/27/2012   100441   alcohol -consume in public       1 |
+ 446. |  2/27/2012   100441   alcohol -consume in public       1 |
+ 531. |  7/25/2012    10053     Consume liquor in public       1 |
+ 532. |  7/25/2012    10053           theft by receiving       1 |
+ 644. |  2/22/2014    10062                        Theft       1 |
+      |----------------------------------------------------------|
+ 645. |  2/22/2014    10062   alcohol -consume in public       1 |
+      +----------------------------------------------------------+
+
+. duplicates drop                                 /*drops any true duplicates*/
+
+Duplicates in terms of all variables
+
+(1 observation deleted)
+
+. duplicates report id arrdate    /*reports number of duplicates on id arrdate*/
+
+Duplicates in terms of id arrdate
+
+--------------------------------------
+   copies | observations       surplus
+----------+---------------------------
+        1 |         9854             0
+        2 |           14             7
+--------------------------------------
+
+. 
+. 
+. /*Converting from string to numeric and vice versa*/
+. list id arrdate in 1/10                         /*displays first 10 observations of id and arrest date
+> */
+
+     +-----------------+
+     | id      arrdate |
+     |-----------------|
+  1. |  1     4/3/2013 |
+  2. |  1    8/30/2013 |
+  3. |  1    1/24/2014 |
+  4. |  1    1/30/2013 |
+  5. |  1    7/22/2014 |
+     |-----------------|
+  6. |  1    7/22/2014 |
+  7. |  1     5/7/2013 |
+  8. |  1    7/23/2014 |
+  9. | 10     2/7/2012 |
+ 10. | 10    7/24/2013 |
+     +-----------------+
+
+. describe id arrdate                                     /*describes the characteristics of id and arre
+> stdate*/
+
+              storage   display    value
+variable name   type    format     label      variable label
+--------------------------------------------------------------------------------------------------------
+id              str6    %9s                   id
+arrdate         str10   %10s                  arrdate
+
+. 
+. destring id, gen(t_id)                          /*Turns string into numeric, need all characters 
+>                                                                         to be numeric. Having temporar
+> y variables start 
+>                                                                         with t_ helps you keep track o
+> f which variables 
+>                                                                         to drop*/
+id: all characters numeric; t_id generated as long
+
+. destring arrdate, gen(t_arrdate)        /*This doesn't work because arrdate has "/"s
+>                                                                         in it.*/
+arrdate: contains nonnumeric characters; no generate
+
+. list id arrdate in 1/10                         /*displays first 10 observations of id and arrest date
+> */
+
+     +-----------------+
+     | id      arrdate |
+     |-----------------|
+  1. |  1     4/3/2013 |
+  2. |  1    8/30/2013 |
+  3. |  1    1/24/2014 |
+  4. |  1    1/30/2013 |
+  5. |  1    7/22/2014 |
+     |-----------------|
+  6. |  1    7/22/2014 |
+  7. |  1     5/7/2013 |
+  8. |  1    7/23/2014 |
+  9. | 10     2/7/2012 |
+ 10. | 10    7/24/2013 |
+     +-----------------+
+
+. describe id arrdate                                     /*describes the characteristics of id and arre
+> stdate*/
+
+              storage   display    value
+variable name   type    format     label      variable label
+--------------------------------------------------------------------------------------------------------
+id              str6    %9s                   id
+arrdate         str10   %10s                  arrdate
+
+. 
+. tostring t_id, replace                          /*Turns numeric back to string*/
+t_id was long now str6
+
+. drop t_id
+
+. 
+. /*Cleaning Dates*/
+. list arrdate in 1/10
+
+     +------------+
+     |    arrdate |
+     |------------|
+  1. |   4/3/2013 |
+  2. |  8/30/2013 |
+  3. |  1/24/2014 |
+  4. |  1/30/2013 |
+  5. |  7/22/2014 |
+     |------------|
+  6. |  7/22/2014 |
+  7. |   5/7/2013 |
+  8. |  7/23/2014 |
+  9. |   2/7/2012 |
+ 10. |  7/24/2013 |
+     +------------+
+
+. gen arr_d=date(arrdate, "MDY")                  /*Need to input format of the date of birth, 
+>                                                                                 "MDY" (Month Day Year)
+>  or 
+>                                                                                 "DMY" (Day Month Year)
+> */
+
+.         label var arr_d "Arrest Date"           /*Adds a label to the variable*/
+
+.         list arr_d arrdate in 1/10
+
+     +--------------------+
+     | arr_d      arrdate |
+     |--------------------|
+  1. | 19451     4/3/2013 |
+  2. | 19600    8/30/2013 |
+  3. | 19747    1/24/2014 |
+  4. | 19388    1/30/2013 |
+  5. | 19926    7/22/2014 |
+     |--------------------|
+  6. | 19926    7/22/2014 |
+  7. | 19485     5/7/2013 |
+  8. | 19927    7/23/2014 |
+  9. | 19030     2/7/2012 |
+ 10. | 19563    7/24/2013 |
+     +--------------------+
+
+.         format arr_d %td                                        /*dates in stata are numeric values th
+> at are 
+>                                                                                 the number of days (or
+>  other denomination) 
+>                                                                                 since 1/1/1960, they n
+> eed to be formatted*/
+
+.         list arr_d arrdate in 1/10
+
+     +------------------------+
+     |     arr_d      arrdate |
+     |------------------------|
+  1. | 03apr2013     4/3/2013 |
+  2. | 30aug2013    8/30/2013 |
+  3. | 24jan2014    1/24/2014 |
+  4. | 30jan2013    1/30/2013 |
+  5. | 22jul2014    7/22/2014 |
+     |------------------------|
+  6. | 22jul2014    7/22/2014 |
+  7. | 07may2013     5/7/2013 |
+  8. | 23jul2014    7/23/2014 |
+  9. | 07feb2012     2/7/2012 |
+ 10. | 24jul2013    7/24/2013 |
+     +------------------------+
+
+.         assert arr_d!=. if arrdate!=""          /*Assert checks the statement, if it's not true
+>                                                                                 then it will stop your
+>  program. This is helpful 
+>                                                                                 if you're running the 
+> same program on different 
+>                                                                                 data it checks your as
+> sumptions*/
+
+.         drop arrdate 
+
+. 
+. /*Once it's in stata date format it's easy to transform*/
+.         gen arr_m=month(arr_d)                          /*generates month of arrest variable*/
+
+.         gen arr_y=year(arr_d)                           /*generates year of arrest variable*/
+
+.         gen arr_my=mofd(arr_d)                          /*generates variable equal to the month/year o
+> f 
+>                                                                                 arrest, note numerical
+> ly this is the 
+>                                                                                 number of months since
+>  1/1/1960, need to 
+>                                                                                 format*/
+
+.         list arr_m arr_y arr_my arr_d in 1/10
+
+     +------------------------------------+
+     | arr_m   arr_y   arr_my       arr_d |
+     |------------------------------------|
+  1. |     4    2013      639   03apr2013 |
+  2. |     8    2013      643   30aug2013 |
+  3. |     1    2014      648   24jan2014 |
+  4. |     1    2013      636   30jan2013 |
+  5. |     7    2014      654   22jul2014 |
+     |------------------------------------|
+  6. |     7    2014      654   22jul2014 |
+  7. |     5    2013      640   07may2013 |
+  8. |     7    2014      654   23jul2014 |
+  9. |     2    2012      625   07feb2012 |
+ 10. |     7    2013      642   24jul2013 |
+     +------------------------------------+
+
+.         format arr_my %tm                                       /*formats it as year month*/
+
+.         list arr_m arr_y arr_my arr_d in 1/10
+
+     +------------------------------------+
+     | arr_m   arr_y   arr_my       arr_d |
+     |------------------------------------|
+  1. |     4    2013   2013m4   03apr2013 |
+  2. |     8    2013   2013m8   30aug2013 |
+  3. |     1    2014   2014m1   24jan2014 |
+  4. |     1    2013   2013m1   30jan2013 |
+  5. |     7    2014   2014m7   22jul2014 |
+     |------------------------------------|
+  6. |     7    2014   2014m7   22jul2014 |
+  7. |     5    2013   2013m5   07may2013 |
+  8. |     7    2014   2014m7   23jul2014 |
+  9. |     2    2012   2012m2   07feb2012 |
+ 10. |     7    2013   2013m7   24jul2013 |
+     +------------------------------------+
+
+.         gen arr_jan25=(arr_d==td(25jan2014)) /*Shortcut for creating dummies is to put 
+>                                                                                 the if statement after
+>  the equal sign in 
+>                                                                                 parenthesis, downside 
+> is only for zero/one 
+>                                                                                 variables, problem for
+>  missings*/
+
+.                                                                                 /*Note td() calls the 
+> label otherwise 
+>                                                                                 you would have to calc
+> ulate days from 
+>                                                                                 1/1/1960*/            
+>           
+.         tab arr_d if arr_jan25==1                       /*Check it is defined correctly*/
+
+Arrest Date |      Freq.     Percent        Cum.
+------------+-----------------------------------
+  25jan2014 |          3      100.00      100.00
+------------+-----------------------------------
+      Total |          3      100.00
+
+.         drop arr_jan25 arr_my arr_m
+
+. /*Clean arrest reason*/
+. tab violdesc, m
+
+                  violdesc |      Freq.     Percent        Cum.
+---------------------------+-----------------------------------
+                     other |         50        0.51        0.51
+                     Theft |         47        0.48        0.98
+ Alcohol-consume in public |        496        5.03        6.01
+  Consume liquor in public |      1,559       15.80       21.81
+                     Other |         52        0.53       22.33
+                     Theft |        692        7.01       29.35
+alcohol -consume in public |      2,522       25.56       54.90
+          alcohol in parks |        291        2.95       57.85
+               petty theft |      1,910       19.36       77.21
+             theft - other |        316        3.20       80.41
+        theft by receiving |        951        9.64       90.05
+      theft of rental prop |        982        9.95      100.00
+---------------------------+-----------------------------------
+                     Total |      9,868      100.00
+
+.         replace violdesc=lower(violdesc) /*makes all lower case, opposite is upper()*/
+(2,846 real changes made)
+
+.         replace violdesc=strtrim(violdesc) /*drops excess spaces at the beginning and end of a string*
+> /
+(97 real changes made)
+
+.         tab violdesc, m
+
+                  violdesc |      Freq.     Percent        Cum.
+---------------------------+-----------------------------------
+alcohol -consume in public |      2,522       25.56       25.56
+          alcohol in parks |        291        2.95       28.51
+ alcohol-consume in public |        496        5.03       33.53
+  consume liquor in public |      1,559       15.80       49.33
+                     other |        102        1.03       50.36
+               petty theft |      1,910       19.36       69.72
+                     theft |        739        7.49       77.21
+             theft - other |        316        3.20       80.41
+        theft by receiving |        951        9.64       90.05
+      theft of rental prop |        982        9.95      100.00
+---------------------------+-----------------------------------
+                     Total |      9,868      100.00
+
+. 
+. /*Say we wanted to create a variable for arrest reason*/
+. gen arrestreason=0
+
+.         replace arrestreason=1 if strpos(violdesc, "theft")!=0 /*strpos tells you the 
+>                                                                                                       
+>                   position of the string 
+>                                                                                                       
+>                   in the variable, 0 means 
+>                                                                                                       
+>                   it's not in the variable*/
+(4,898 real changes made)
+
+.         replace arrestreason=2 if (strpos(violdesc, "liquor")!=0 | strpos(violdesc, "alcohol")!=0) 
+(4,868 real changes made)
+
+.         tab violdesc arrestreason, m 
+
+                      |           arrestreason
+             violdesc |         0          1          2 |     Total
+----------------------+---------------------------------+----------
+alcohol -consume in.. |         0          0      2,522 |     2,522 
+     alcohol in parks |         0          0        291 |       291 
+alcohol-consume in .. |         0          0        496 |       496 
+consume liquor in p.. |         0          0      1,559 |     1,559 
+                other |       102          0          0 |       102 
+          petty theft |         0      1,910          0 |     1,910 
+                theft |         0        739          0 |       739 
+        theft - other |         0        316          0 |       316 
+   theft by receiving |         0        951          0 |       951 
+ theft of rental prop |         0        982          0 |       982 
+----------------------+---------------------------------+----------
+                Total |       102      4,898      4,868 |     9,868 
+
+.         label define arrestreason 0 "Other" 1 "Theft" 2 "Alcohol"
+
+.         label values arrestreason arrestreason
+
+.         label var arrestreason "Reason For Arrest"
+
+.         tab violdesc arrestreason, m
+
+                      |        Reason For Arrest
+             violdesc |     Other      Theft    Alcohol |     Total
+----------------------+---------------------------------+----------
+alcohol -consume in.. |         0          0      2,522 |     2,522 
+     alcohol in parks |         0          0        291 |       291 
+alcohol-consume in .. |         0          0        496 |       496 
+consume liquor in p.. |         0          0      1,559 |     1,559 
+                other |       102          0          0 |       102 
+          petty theft |         0      1,910          0 |     1,910 
+                theft |         0        739          0 |       739 
+        theft - other |         0        316          0 |       316 
+   theft by receiving |         0        951          0 |       951 
+ theft of rental prop |         0        982          0 |       982 
+----------------------+---------------------------------+----------
+                Total |       102      4,898      4,868 |     9,868 
+
+.         
+. /*Other useful string commands: */
+.         tab violdesc
+
+                  violdesc |      Freq.     Percent        Cum.
+---------------------------+-----------------------------------
+alcohol -consume in public |      2,522       25.56       25.56
+          alcohol in parks |        291        2.95       28.51
+ alcohol-consume in public |        496        5.03       33.53
+  consume liquor in public |      1,559       15.80       49.33
+                     other |        102        1.03       50.36
+               petty theft |      1,910       19.36       69.72
+                     theft |        739        7.49       77.21
+             theft - other |        316        3.20       80.41
+        theft by receiving |        951        9.64       90.05
+      theft of rental prop |        982        9.95      100.00
+---------------------------+-----------------------------------
+                     Total |      9,868      100.00
+
+.         gen t_violdesc = subinstr(violdesc, "-", " ",.) /*pull out certain characters*/ 
+
+.         tab t_violdesc, m
+
+                t_violdesc |      Freq.     Percent        Cum.
+---------------------------+-----------------------------------
+alcohol  consume in public |      2,522       25.56       25.56
+ alcohol consume in public |        496        5.03       30.58
+          alcohol in parks |        291        2.95       33.53
+  consume liquor in public |      1,559       15.80       49.33
+                     other |        102        1.03       50.36
+               petty theft |      1,910       19.36       69.72
+                     theft |        739        7.49       77.21
+             theft   other |        316        3.20       80.41
+        theft by receiving |        951        9.64       90.05
+      theft of rental prop |        982        9.95      100.00
+---------------------------+-----------------------------------
+                     Total |      9,868      100.00
+
+.         split violdesc, p("-") gen(t_)                                  /*Divides the string into a bu
+> nch 
+>                                                                                                       
+>   of strings based on where the parse 
+>                                                                                                       
+>   is, useful for full names*/
+variables created as string: 
+t_1  t_2
+
+.         help string functions                                                   // Stata HELP file lis
+> ting various string functions...
+
+.         
+.         list violdesc t_1 t_2 if t_2!="" in 1/100
+
+     +-----------------------------------------------------------+
+     |                   violdesc        t_1                 t_2 |
+     |-----------------------------------------------------------|
+  2. | alcohol -consume in public   alcohol    consume in public |
+  3. | alcohol -consume in public   alcohol    consume in public |
+  4. | alcohol -consume in public   alcohol    consume in public |
+  5. | alcohol -consume in public   alcohol    consume in public |
+  7. | alcohol -consume in public   alcohol    consume in public |
+     |-----------------------------------------------------------|
+  9. | alcohol -consume in public   alcohol    consume in public |
+ 15. | alcohol -consume in public   alcohol    consume in public |
+ 18. | alcohol -consume in public   alcohol    consume in public |
+ 21. |              theft - other     theft                other |
+ 23. | alcohol -consume in public   alcohol    consume in public |
+     |-----------------------------------------------------------|
+ 29. | alcohol -consume in public   alcohol    consume in public |
+ 30. | alcohol -consume in public   alcohol    consume in public |
+ 31. | alcohol -consume in public   alcohol    consume in public |
+ 34. | alcohol -consume in public   alcohol    consume in public |
+ 38. | alcohol -consume in public   alcohol    consume in public |
+     |-----------------------------------------------------------|
+ 44. |  alcohol-consume in public    alcohol   consume in public |
+ 48. | alcohol -consume in public   alcohol    consume in public |
+ 49. |  alcohol-consume in public    alcohol   consume in public |
+ 58. |              theft - other     theft                other |
+ 59. | alcohol -consume in public   alcohol    consume in public |
+     |-----------------------------------------------------------|
+ 67. | alcohol -consume in public   alcohol    consume in public |
+ 68. | alcohol -consume in public   alcohol    consume in public |
+ 69. | alcohol -consume in public   alcohol    consume in public |
+ 75. | alcohol -consume in public   alcohol    consume in public |
+ 77. |              theft - other     theft                other |
+     |-----------------------------------------------------------|
+ 82. |              theft - other     theft                other |
+ 84. | alcohol -consume in public   alcohol    consume in public |
+ 86. | alcohol -consume in public   alcohol    consume in public |
+ 87. | alcohol -consume in public   alcohol    consume in public |
+ 91. | alcohol -consume in public   alcohol    consume in public |
+     |-----------------------------------------------------------|
+ 94. | alcohol -consume in public   alcohol    consume in public |
+ 97. |              theft - other     theft                other |
+100. |  alcohol-consume in public    alcohol   consume in public |
+     +-----------------------------------------------------------+
+
+.         drop t_*                        /* a * after a variable name calls all variables that start 
+>                                                 with that name, use a t_ prefix  for all your temporar
+> y 
+>                                                 variable and then you can drop with a drop t_* 
+>                                                 when your done*/        
+
+. /*renaming variables*/
+. rename arrestreason arr_r
+
+.         describe
+
+Contains data
+  obs:         9,868                          
+ vars:             5                          
+ size:       434,192                          
+--------------------------------------------------------------------------------------------------------
+              storage   display    value
+variable name   type    format     label      variable label
+--------------------------------------------------------------------------------------------------------
+id              str6    %9s                   id
+violdesc        str26   %26s                  violdesc
+arr_d           float   %td                   Arrest Date
+arr_y           float   %9.0g                 
+arr_r           float   %9.0g      arrestreason
+                                              Reason For Arrest
+--------------------------------------------------------------------------------------------------------
+Sorted by: 
+     Note: Dataset has changed since last saved.
+
+. rename arr_*    arrest_*        /*You can use * to rename a bunch of variable */
+
+.         describe
+
+Contains data
+  obs:         9,868                          
+ vars:             5                          
+ size:       434,192                          
+--------------------------------------------------------------------------------------------------------
+              storage   display    value
+variable name   type    format     label      variable label
+--------------------------------------------------------------------------------------------------------
+id              str6    %9s                   id
+violdesc        str26   %26s                  violdesc
+arrest_d        float   %td                   Arrest Date
+arrest_y        float   %9.0g                 
+arrest_r        float   %9.0g      arrestreason
+                                              Reason For Arrest
+--------------------------------------------------------------------------------------------------------
+Sorted by: 
+     Note: Dataset has changed since last saved.
+
+. rename *_d      d_*                             /*or to add/remove a prefix*/
+
+.         describe
+
+Contains data
+  obs:         9,868                          
+ vars:             5                          
+ size:       434,192                          
+--------------------------------------------------------------------------------------------------------
+              storage   display    value
+variable name   type    format     label      variable label
+--------------------------------------------------------------------------------------------------------
+id              str6    %9s                   id
+violdesc        str26   %26s                  violdesc
+d_arrest        float   %td                   Arrest Date
+arrest_y        float   %9.0g                 
+arrest_r        float   %9.0g      arrestreason
+                                              Reason For Arrest
+--------------------------------------------------------------------------------------------------------
+Sorted by: 
+     Note: Dataset has changed since last saved.
+
+. rename d_*      *_d
+
+. rename arrest_* arr_*
+
+.         describe
+
+Contains data
+  obs:         9,868                          
+ vars:             5                          
+ size:       434,192                          
+--------------------------------------------------------------------------------------------------------
+              storage   display    value
+variable name   type    format     label      variable label
+--------------------------------------------------------------------------------------------------------
+id              str6    %9s                   id
+violdesc        str26   %26s                  violdesc
+arr_d           float   %td                   Arrest Date
+arr_y           float   %9.0g                 
+arr_r           float   %9.0g      arrestreason
+                                              Reason For Arrest
+--------------------------------------------------------------------------------------------------------
+Sorted by: 
+     Note: Dataset has changed since last saved.
+
+.         
+.         
+. /*Say we want to get rid of duplicates so that a person has their arrest reasons 
+> listed horizontally*/
+. duplicates tag id arr_d, gen(t_dup) /*generates a variable called t_dup to identify 
+>                                                                         duplicates*/ 
+
+Duplicates in terms of id arr_d
+
+. 
+. list if t_dup!=0        
+
+      +---------------------------------------------------------------------------+
+      |     id                     violdesc       arr_d   arr_y     arr_r   t_dup |
+      |---------------------------------------------------------------------------|
+   5. |      1   alcohol -consume in public   22jul2014    2014   Alcohol       1 |
+   6. |      1         theft of rental prop   22jul2014    2014     Theft       1 |
+ 122. |   1001         theft of rental prop   24aug2013    2013     Theft       1 |
+ 123. |   1001   alcohol -consume in public   24aug2013    2013   Alcohol       1 |
+ 207. | 100178   alcohol -consume in public   27dec2012    2012   Alcohol       1 |
+      |---------------------------------------------------------------------------|
+ 208. | 100178                  petty theft   27dec2012    2012     Theft       1 |
+ 306. | 100295                  petty theft   28dec2012    2012     Theft       1 |
+ 307. | 100295     consume liquor in public   28dec2012    2012   Alcohol       1 |
+ 406. |   1004   alcohol -consume in public   03jun2013    2013   Alcohol       1 |
+ 407. |   1004                        theft   03jun2013    2013     Theft       1 |
+      |---------------------------------------------------------------------------|
+ 530. |  10053     consume liquor in public   25jul2012    2012   Alcohol       1 |
+ 531. |  10053           theft by receiving   25jul2012    2012     Theft       1 |
+ 643. |  10062                        theft   22feb2014    2014     Theft       1 |
+ 644. |  10062   alcohol -consume in public   22feb2014    2014   Alcohol       1 |
+      +---------------------------------------------------------------------------+
+
+. 
+. *This code will create indicators for if each individual (ID) was ever arrested for each of the 3 reas
+> ons we specified on each date:
+. gen t_arr=(arr_r==1) 
+
+. list id arr_d arr_r t_arr in 1/10
+
+     +----------------------------------+
+     | id       arr_d     arr_r   t_arr |
+     |----------------------------------|
+  1. |  1   03apr2013     Theft       1 |
+  2. |  1   30aug2013   Alcohol       0 |
+  3. |  1   24jan2014   Alcohol       0 |
+  4. |  1   30jan2013   Alcohol       0 |
+  5. |  1   22jul2014   Alcohol       0 |
+     |----------------------------------|
+  6. |  1   22jul2014     Theft       1 |
+  7. |  1   07may2013   Alcohol       0 |
+  8. |  1   23jul2014     Theft       1 |
+  9. | 10   07feb2012   Alcohol       0 |
+ 10. | 10   24jul2013   Alcohol       0 |
+     +----------------------------------+
+
+. by id arr_d, sort: egen arr_theft=max(t_arr)
+
+. list id arr_d arr_r t_arr arr_theft in 1/10
+
+     +---------------------------------------------+
+     | id       arr_d     arr_r   t_arr   arr_th~t |
+     |---------------------------------------------|
+  1. |  1   30jan2013   Alcohol       0          0 |
+  2. |  1   03apr2013     Theft       1          1 |
+  3. |  1   07may2013   Alcohol       0          0 |
+  4. |  1   30aug2013   Alcohol       0          0 |
+  5. |  1   24jan2014   Alcohol       0          0 |
+     |---------------------------------------------|
+  6. |  1   22jul2014   Alcohol       0          1 |
+  7. |  1   22jul2014     Theft       1          1 |
+  8. |  1   23jul2014     Theft       1          1 |
+  9. | 10   07feb2012   Alcohol       0          0 |
+ 10. | 10   17feb2012     Theft       1          1 |
+     +---------------------------------------------+
+
+. drop t_arr
+
+. gen t_arr=(arr_r==2)
+
+. by id arr_d, sort: egen arr_alcohol=max(t_arr)
+
+. drop t_arr
+
+. gen t_arr=(arr_r==0)    
+
+. by id arr_d, sort: egen arr_other=max(t_arr)
+
+. drop t_arr
+
+. label define yesno 0 "No" 1 "Yes"
+
+. label values arr_theft arr_alcohol arr_other yesno
+
+.  
+. list if t_dup!=0
+
+      +--------------------------------------------------------------------------------------+
+   6. |     id |                   violdesc |     arr_d | arr_y |   arr_r | t_dup | arr_th~t |
+      |      1 | alcohol -consume in public | 22jul2014 |  2014 | Alcohol |     1 |      Yes |
+      |--------------------------------------------------------------------------------------|
+      |                 arr_al~l                 |                 arr_ot~r                  |
+      |                      Yes                 |                       No                  |
+      +--------------------------------------------------------------------------------------+
+
+      +--------------------------------------------------------------------------------------+
+   7. |     id |                   violdesc |     arr_d | arr_y |   arr_r | t_dup | arr_th~t |
+      |      1 |       theft of rental prop | 22jul2014 |  2014 |   Theft |     1 |      Yes |
+      |--------------------------------------------------------------------------------------|
+      |                 arr_al~l                 |                 arr_ot~r                  |
+      |                      Yes                 |                       No                  |
+      +--------------------------------------------------------------------------------------+
+
+      +--------------------------------------------------------------------------------------+
+ 120. |     id |                   violdesc |     arr_d | arr_y |   arr_r | t_dup | arr_th~t |
+      |   1001 | alcohol -consume in public | 24aug2013 |  2013 | Alcohol |     1 |      Yes |
+      |--------------------------------------------------------------------------------------|
+      |                 arr_al~l                 |                 arr_ot~r                  |
+      |                      Yes                 |                       No                  |
+      +--------------------------------------------------------------------------------------+
+
+      +--------------------------------------------------------------------------------------+
+ 121. |     id |                   violdesc |     arr_d | arr_y |   arr_r | t_dup | arr_th~t |
+      |   1001 |       theft of rental prop | 24aug2013 |  2013 |   Theft |     1 |      Yes |
+      |--------------------------------------------------------------------------------------|
+      |                 arr_al~l                 |                 arr_ot~r                  |
+      |                      Yes                 |                       No                  |
+      +--------------------------------------------------------------------------------------+
+
+      +--------------------------------------------------------------------------------------+
+ 209. |     id |                   violdesc |     arr_d | arr_y |   arr_r | t_dup | arr_th~t |
+      | 100178 | alcohol -consume in public | 27dec2012 |  2012 | Alcohol |     1 |      Yes |
+      |--------------------------------------------------------------------------------------|
+      |                 arr_al~l                 |                 arr_ot~r                  |
+      |                      Yes                 |                       No                  |
+      +--------------------------------------------------------------------------------------+
+
+      +--------------------------------------------------------------------------------------+
+ 210. |     id |                   violdesc |     arr_d | arr_y |   arr_r | t_dup | arr_th~t |
+      | 100178 |                petty theft | 27dec2012 |  2012 |   Theft |     1 |      Yes |
+      |--------------------------------------------------------------------------------------|
+      |                 arr_al~l                 |                 arr_ot~r                  |
+      |                      Yes                 |                       No                  |
+      +--------------------------------------------------------------------------------------+
+
+      +--------------------------------------------------------------------------------------+
+ 306. |     id |                   violdesc |     arr_d | arr_y |   arr_r | t_dup | arr_th~t |
+      | 100295 |                petty theft | 28dec2012 |  2012 |   Theft |     1 |      Yes |
+      |--------------------------------------------------------------------------------------|
+      |                 arr_al~l                 |                 arr_ot~r                  |
+      |                      Yes                 |                       No                  |
+      +--------------------------------------------------------------------------------------+
+
+      +--------------------------------------------------------------------------------------+
+ 307. |     id |                   violdesc |     arr_d | arr_y |   arr_r | t_dup | arr_th~t |
+      | 100295 |   consume liquor in public | 28dec2012 |  2012 | Alcohol |     1 |      Yes |
+      |--------------------------------------------------------------------------------------|
+      |                 arr_al~l                 |                 arr_ot~r                  |
+      |                      Yes                 |                       No                  |
+      +--------------------------------------------------------------------------------------+
+
+      +--------------------------------------------------------------------------------------+
+ 402. |     id |                   violdesc |     arr_d | arr_y |   arr_r | t_dup | arr_th~t |
+      |   1004 | alcohol -consume in public | 03jun2013 |  2013 | Alcohol |     1 |      Yes |
+      |--------------------------------------------------------------------------------------|
+      |                 arr_al~l                 |                 arr_ot~r                  |
+      |                      Yes                 |                       No                  |
+      +--------------------------------------------------------------------------------------+
+
+      +--------------------------------------------------------------------------------------+
+ 403. |     id |                   violdesc |     arr_d | arr_y |   arr_r | t_dup | arr_th~t |
+      |   1004 |                      theft | 03jun2013 |  2013 |   Theft |     1 |      Yes |
+      |--------------------------------------------------------------------------------------|
+      |                 arr_al~l                 |                 arr_ot~r                  |
+      |                      Yes                 |                       No                  |
+      +--------------------------------------------------------------------------------------+
+
+      +--------------------------------------------------------------------------------------+
+ 529. |     id |                   violdesc |     arr_d | arr_y |   arr_r | t_dup | arr_th~t |
+      |  10053 |         theft by receiving | 25jul2012 |  2012 |   Theft |     1 |      Yes |
+      |--------------------------------------------------------------------------------------|
+      |                 arr_al~l                 |                 arr_ot~r                  |
+      |                      Yes                 |                       No                  |
+      +--------------------------------------------------------------------------------------+
+
+      +--------------------------------------------------------------------------------------+
+ 530. |     id |                   violdesc |     arr_d | arr_y |   arr_r | t_dup | arr_th~t |
+      |  10053 |   consume liquor in public | 25jul2012 |  2012 | Alcohol |     1 |      Yes |
+      |--------------------------------------------------------------------------------------|
+      |                 arr_al~l                 |                 arr_ot~r                  |
+      |                      Yes                 |                       No                  |
+      +--------------------------------------------------------------------------------------+
+
+      +--------------------------------------------------------------------------------------+
+ 641. |     id |                   violdesc |     arr_d | arr_y |   arr_r | t_dup | arr_th~t |
+      |  10062 | alcohol -consume in public | 22feb2014 |  2014 | Alcohol |     1 |      Yes |
+      |--------------------------------------------------------------------------------------|
+      |                 arr_al~l                 |                 arr_ot~r                  |
+      |                      Yes                 |                       No                  |
+      +--------------------------------------------------------------------------------------+
+
+      +--------------------------------------------------------------------------------------+
+ 642. |     id |                   violdesc |     arr_d | arr_y |   arr_r | t_dup | arr_th~t |
+      |  10062 |                      theft | 22feb2014 |  2014 |   Theft |     1 |      Yes |
+      |--------------------------------------------------------------------------------------|
+      |                 arr_al~l                 |                 arr_ot~r                  |
+      |                      Yes                 |                       No                  |
+      +--------------------------------------------------------------------------------------+
+
+. *Now we can drop the specific arrest descriptions as well as the categorical description
+.         *since we have indicators for our categories of arrest for each date:
+. drop arr_r violdesc t_*
+
+. duplicates drop
+
+Duplicates in terms of all variables
+
+(7 observations deleted)
+
+. duplicates report id arr_d
+
+Duplicates in terms of id arr_d
+
+--------------------------------------
+   copies | observations       surplus
+----------+---------------------------
+        1 |         9861             0
+--------------------------------------
+
+. 
+. 
+. save "long.dta", replace /*Save the long form of this data set*/
+(note: file long.dta not found)
+file long.dta saved
+
+. 
+. 
+. 
+.                                 
+. ***EXERCISES****
+. *(It will be helpful to run the code above 1st, 
+. * as the questions below use some of the data files that are created.)
+. 
+. /*Open the long.dta data set. How many duplicates are there on id?*/
+. 
+. *Answer: 
+. use "long.dta", clear
+
+.         duplicates report id
+
+Duplicates in terms of id
+
+--------------------------------------
+   copies | observations       surplus
+----------+---------------------------
+        1 |         4464             0
+        2 |         1958           979
+        3 |          978           652
+        4 |          456           342
+        5 |          395           316
+        6 |          240           200
+        7 |          161           138
+        8 |          136           119
+        9 |          108            96
+       10 |           90            81
+       11 |           66            60
+       12 |           96            88
+       13 |           65            60
+       14 |           14            13
+       15 |           75            70
+       16 |           48            45
+       17 |           34            32
+       18 |           18            17
+       19 |           38            36
+       20 |           60            57
+       22 |           66            63
+       24 |           48            46
+       26 |           26            25
+       28 |           28            27
+       29 |           29            28
+       30 |           30            29
+       31 |           31            30
+       32 |           64            62
+       39 |           39            38
+--------------------------------------
+
+. 
+. 
+. /*import the csv file called main_names.csv  (Hint: you can either search help import
+> or use the interface to determine the code for importing a csv)*/
+. 
+. import delimited "main_names.csv", clear
+(2 vars, 82,724 obs)
+
+. 
+. /*How many true duplicates are there? How many duplicates on id? Drop any true duplicates*/
+. 
+. duplicates report
+
+Duplicates in terms of all variables
+
+--------------------------------------
+   copies | observations       surplus
+----------+---------------------------
+        1 |        76575             0
+        2 |         3800          1900
+        3 |         2349          1566
+--------------------------------------
+
+. duplicates report id
+
+Duplicates in terms of id
+
+--------------------------------------
+   copies | observations       surplus
+----------+---------------------------
+        1 |        72635             0
+        2 |         7740          3870
+        3 |         2349          1566
+--------------------------------------
+
+. duplicates drop
+
+Duplicates in terms of all variables
+
+(3,466 observations deleted)
+
+. 
+. /*Generate a variable which identifies the duplicates, sort by id and then 
+> list the first few duplicates (hint: set more off)*/
+. 
+. duplicates tag id, gen(t_dup)
+
+Duplicates in terms of id
+
+. list if t_dup==1 in 1/100  /*Note that in 1/100 command just shows the first 100 
+>                                                         observations not the first 100 that meet the c
+> riteria*/
+
+     +---------------------------------+
+     |     id        full_name   t_dup |
+     |---------------------------------|
+ 19. | 100024     james wilson       1 |
+ 20. | 100024     james wilson       1 |
+ 45. | 100074       will clark       1 |
+ 46. | 100074       WILL CLARK       1 |
+     +---------------------------------+
+
+. set more on 
+
+. list if t_dup==1                        /*Set more on then click the red (x) at the top to break */
+
+       +--------------------------------------+
+       |     id             full_name   t_dup |
+       |--------------------------------------|
+   19. | 100024          james wilson       1 |
+   20. | 100024          james wilson       1 |
+   45. | 100074            will clark       1 |
+   46. | 100074            WILL CLARK       1 |
+  132. | 100221          Daniel Moore       1 |
+       |--------------------------------------|
+  133. | 100221          daniel moore       1 |
+  179. | 100307          hannah jones       1 |
+  180. | 100307          HANNAH JONES       1 |
+  193. | 100332            sophia lee       1 |
+  194. | 100332            SOPHIA LEE       1 |
+       |--------------------------------------|
+  201. | 100343        RICHARD THOMAS       1 |
+  202. | 100343        richard thomas       1 |
+  235. | 100398         john robinson       1 |
+  236. | 100398         John Robinson       1 |
+  275. | 100459       emily rodriguez       1 |
+       |--------------------------------------|
+  276. | 100459       Emily Rodriguez       1 |
+  287. |  10048          john johnson       1 |
+  288. |  10048          John Johnson       1 |
+  289. | 100480       chris rodriguez       1 |
+  290. | 100480       CHRIS RODRIGUEZ       1 |
+       |--------------------------------------|
+  375. | 100617            john brown       1 |
+  376. | 100617            john brown       1 |
+  377. | 100619          james miller       1 |
+  378. | 100619          JAMES MILLER       1 |
+  393. | 100635            WILL MOORE       1 |
+       |--------------------------------------|
+  394. | 100635            will moore       1 |
+  408. | 100658            john smith       1 |
+  409. | 100658            John Smith       1 |
+  445. | 100710           James Smith       1 |
+  446. | 100710           james smith       1 |
+       |--------------------------------------|
+  529. | 100830           EMMA HARRIS       1 |
+--Break--
+r(1);
+
+end of do-file
+
+--Break--
+r(1);
+
+. do "D:\Users\clou\AppData\Local\Temp\STD8b44_000000.tmp"
+
+. set more off
+
+. /*The duplicates show different versions of the same name, use the string commands
+> learned above so that the names are all in trimmed and in lower case, then remove 
+> any remaining true duplicates*/
+. 
+. replace full_name=trim(full_name)
+(390 real changes made)
+
+. replace full_name=lower(full_name)
+(9,273 real changes made)
+
+. duplicates drop
+
+Duplicates in terms of all variables
+
+(1,970 observations deleted)
+
+. 
+. /*How many duplicates on id do you have now?*/
+. 
+. duplicates report id 
+
+Duplicates in terms of id
+
+--------------------------------------
+   copies | observations       surplus
+----------+---------------------------
+        1 |        77288             0
+--------------------------------------
+
+. 
+. /*Now split the name into f_name for their first name and l_name for their 
+> last name. Drop any middle initials.*/
+. 
+. split full_name, p(" ")
+variables created as string: 
+full_name1  full_name2  full_name3
+
+. 
+. rename full_name1 f_name
+
+. rename full_name2 l_name
+
+. replace l_name=full_name3 if full_name3!="" /*There is only a third name if they
+>                                                                                         had a middle n
+> ame*/
+(8,476 real changes made)
+
+. replace l_name=full_name3 if length(l_name)<3  /*Another way: All the middle 
+>                                                                                                       
+>   names are middle initials 
+>                                                                                                       
+>   less than 3 characters*/
+(0 real changes made)
+
+. replace l_name=full_name3 if strpos(l_name, ".")!=0 /*Another way: All the middle 
+>                                                                                                       
+>   names are middle initials 
+>                                                                                                       
+>   with a period*/
+(0 real changes made)
+
+. drop full_name3
+
+. 
+. /*Tab  last name to view the values.  Do you notice any non-alphabetical characters?
+> Remove them from the first and/or last names*/
+. 
+. replace l_name=subinstr(l_name, "/", "", .)
+(12 real changes made)
+
+. 
+. /*Extra credit, do a google search to see how you could remove non-alphabetic characters
+> in the name varaibles without knowing which non-aphabetic characters where in the variable*/    
+.  
+.  capture noisily ssc install egenmore
+checking egenmore consistency and verifying not already installed...
+
+the following files already exist and are different:
+    c:\ado\plus\_\_gxtile.ado
+
+no files installed or copied
+(no action taken)
+
+.  egen new_l_name=sieve(l_name), keep(a)
+
+.  
+.  
+.  
+. capture log close
