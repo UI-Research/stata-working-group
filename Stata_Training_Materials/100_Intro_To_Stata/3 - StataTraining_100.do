@@ -1,7 +1,7 @@
 ** LOCATION: D:\Users\clou\Desktop\Do
 ** CREATED BY: Emma Kalish
 ** CREATED ON: 7/20/15
-** LAST EDITED: 6/29/18 by Hannah Hassani
+** LAST EDITED: 6/29/20 by Cary Lou
 ** LAST RUN:
 ** DESCRIPTION: Example do file for Stata class
 ** NOTES: Uses Stata15
@@ -32,7 +32,7 @@
 
 ***Setting up your DO file and opening your data***
 *Set your working directory:
-cd "D:\Users\hhassani\Desktop"
+cd "D:\Users\clou\Desktop"
 
 *This command allows do file to run continuously rathering than having to click "more" on the screen
 set more off, permanently
@@ -343,6 +343,6 @@ save "FINRA_03.dta", replace
 *close log
 log close
 *view log by navigating to it and opening it with Stata or notepad. 
-	*Mine is in my working directory "D:\Users\hhassani\Desktop"
+	*Mine is in my working directory "D:\Users\clou\Desktop"
 
 
