@@ -7,8 +7,8 @@ capture ssc install savesome 				/*Some commands have to be installed, but
 set more off, permanently
 
 *Set a working directory where all your project files will be located (replace my username with your own):
-*cd "D:\Users\CLou\Desktop\"
-cd "C:\Users\urbanmeet\Desktop\"
+cd "D:\Users\CLou\Desktop\"
+*cd "C:\Users\urbanmeet\Desktop\"
 
 
 log using "StataClass_$S_DATE.log", replace 		/*$S_DATE saves the date in 
@@ -33,7 +33,7 @@ describe
 list in 1/10				/* Lists the first 10 observations*/
 
 *DUPLICATES
-/*Checking for duplicates, this should includ one observation per person per arrest date*/
+/*Checking for duplicates, this should include one observation per person per arrest date*/
 duplicates report id			/*more than one arrest for most of these individuals*/
 duplicates report id arrdate 	/*reports number of duplicates on id arrdate*/
 duplicates tag id arrdate, gen(t_dup) /*generates a variable called t_dup to identify 
