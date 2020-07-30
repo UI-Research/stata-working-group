@@ -382,7 +382,10 @@ foreach var in A3A    r_white r_black r_hisp r_asian r_other reg_ne reg_mw reg_s
 		*so we will use the mean estimation and the postestimatation test command to see.
 		*We could also use "ttest" to do this in one line, but "mean" is more flexible and allows us to use weights if we want
 		mean `var', over (A3)
-		test [`var']Male = [`var']Female
+		test [`var']Male = [`var']Female // Stata 15 syntax
+			/*If using Stata 16, use this alternative syntax:
+			test `var'@1.A3 = `var'@2.A3
+			*/
 		*Save the 2-sided p-value of this difference of means test to a third local macro
 		local pvaloftest = r(p)
 	*Finally, for the variable we are actively looping through,
